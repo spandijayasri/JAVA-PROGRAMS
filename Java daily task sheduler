@@ -1,0 +1,294 @@
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+
+public class Main extends JFrame {
+
+    Color purple = new Color(105, 75, 190);
+    Color background = new Color(240, 240, 255);
+
+    HashMap<String, String> users = new HashMap<>();
+    HashMap<String, ArrayList<String[]>> tasks = new HashMap<>();
+
+    String currentUser;
+    DefaultTableModel model;
+    JTable table;
+    JLabel summary;
+
+    JTextField username = new JTextField();
+    JPasswordField password = new JPasswordField();
+
+    Main() {
+        setTitle("Daily Task Scheduler");
+        setSize(750, 550);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        showLogin();
+        setVisible(true);
+    }
+
+    void showLogin() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(background);
+
+        JPanel card = new JPanel();
+        card.setPreferredSize(new Dimension(380, 390));
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(BorderFactory.createEmptyBorder(30, 35, 30, 35));
+
+        JLabel title = new JLabel("DAILY TASK SCHEDULER");
+        title.setFont(new Font("Arial", Font.BOLD, 23));
+        title.setForeground(purple);
+
+        JLabel subtitle = new JLabel("Organize your day beautifully!");
+        JLabel userLabel = new JLabel("Username");
+        JLabel passLabel = new JLabel("Password");
+
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        userLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        passLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        username.setAlignmentX(Component.CENTER_ALIGNMENT);
+        password.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        username.setMaximumSize(new Dimension(300, 38));
+        password.setMaximumSize(new Dimension(300, 38));
+
+        JButton login = new JButton("LOGIN");
+        JButton register = new JButton("REGISTER");
+
+        styleButton(login);
+        styleButton(register);
+
+        login.setAlignmentX(Component.CENTER_ALIGNMENT);
+        register.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        card.add(title);
+        card.add(Box.createVerticalStrut(12));
+        card.add(subtitle);
+        card.add(Box.createVerticalStrut(30));
+        card.add(userLabel);
+        card.add(username);
+        card.add(Box.createVerticalStrut(15));
+        card.add(passLabel);
+        card.add(password);
+        card.add(Box.createVerticalStrut(25));
+        card.add(login);
+        card.add(Box.createVerticalStrut(12));
+        card.add(register);
+
+        login.addActionListener(e -> login());
+        register.addActionListener(e -> register());
+
+        panel.add(card);
+        setContentPane(panel);
+        revalidate();
+    }
+
+    void register() {
+        String u = username.getText().trim();
+        String p = new String(password.getPassword());
+
+        if (u.isEmpty() || p.isEmpty()) {
+            message("Enter username and password!");
+        } else if (users.containsKey(u)) {
+            message("Username already exists!");
+        } else {
+            users.put(u, p);
+            tasks.put(u, new ArrayList<>());
+            message("Registration successful!");
+        }
+    }
+
+    void login() {
+        String u = username.getText().trim();
+        String p = new String(password.getPassword());
+
+        if (users.containsKey(u) && users.get(u).equals(p)) {
+            currentUser = u;
+            showDashboard();
+        } else {
+            message("Invalid username or password!");
+        }
+    }
+
+    void showDashboard() {
+        JPanel main = new JPanel(new BorderLayout(10, 10));
+        main.setBackground(background);
+        main.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+
+        JLabel heading = new JLabel("MY DAILY TASKS", JLabel.CENTER);
+        heading.setFont(new Font("Arial", Font.BOLD, 25));
+        heading.setForeground(purple);
+        main.add(heading, BorderLayout.NORTH);
+
+        JTextField taskName = new JTextField();
+
+        JSpinner dueDate = new JSpinner(
+            new SpinnerDateModel(new Date(), null, null, Calendar.DAY_OF_MONTH)
+        );
+        dueDate.setEditor(
+            new JSpinner.DateEditor(dueDate, "dd-MM-yyyy")
+        );
+
+        JComboBox<String> priority = new JComboBox<>(
+            new String[]{"High", "Medium", "Low"}
+        );
+
+        JButton add = new JButton("ADD TASK");
+        JButton complete = new JButton("COMPLETE");
+        JButton delete = new JButton("DELETE");
+        JButton performance = new JButton("PERFORMANCE");
+        JButton logout = new JButton("LOGOUT");
+
+        styleButton(add);
+        styleButton(complete);
+        styleButton(delete);
+        styleButton(performance);
+        styleButton(logout);
+
+        JPanel input = new JPanel(new GridLayout(2, 3, 8, 8));
+        input.add(new JLabel("Task Name"));
+        input.add(new JLabel("Choose Due Date"));
+        input.add(new JLabel("Priority"));
+        input.add(taskName);
+        input.add(dueDate);
+        input.add(priority);
+
+        model = new DefaultTableModel(
+            new String[]{"Task", "Due Date", "Priority", "Status"}, 0
+        );
+
+        table = new JTable(model);
+        table.setRowHeight(28);
+
+        JPanel buttons = new JPanel();
+        buttons.add(add);
+        buttons.add(complete);
+        buttons.add(delete);
+        buttons.add(performance);
+        buttons.add(logout);
+
+        summary = new JLabel("", JLabel.CENTER);
+        summary.setFont(new Font("Arial", Font.BOLD, 15));
+
+        JPanel bottom = new JPanel(new BorderLayout());
+        bottom.add(buttons, BorderLayout.CENTER);
+        bottom.add(summary, BorderLayout.SOUTH);
+
+        JPanel center = new JPanel(new BorderLayout(8, 8));
+        center.add(input, BorderLayout.NORTH);
+        center.add(new JScrollPane(table), BorderLayout.CENTER);
+
+        main.add(center, BorderLayout.CENTER);
+        main.add(bottom, BorderLayout.SOUTH);
+
+        add.addActionListener(e -> {
+            String name = taskName.getText().trim();
+
+            String date = new SimpleDateFormat("dd-MM-yyyy")
+                .format((Date) dueDate.getValue());
+
+            if (name.isEmpty()) {
+                message("Enter task name!");
+                return;
+            }
+
+            tasks.get(currentUser).add(new String[]{
+                name, date, priority.getSelectedItem().toString(), "Pending"
+            });
+
+            taskName.setText("");
+            dueDate.setValue(new Date());
+            refresh();
+        });
+
+        complete.addActionListener(e -> updateTask("Completed"));
+        delete.addActionListener(e -> deleteTask());
+        performance.addActionListener(e -> showPerformance());
+
+        logout.addActionListener(e -> {
+            username.setText("");
+            password.setText("");
+            showLogin();
+        });
+
+        setContentPane(main);
+        refresh();
+        revalidate();
+    }
+
+    void refresh() {
+        model.setRowCount(0);
+
+        int done = 0;
+
+        for (String[] t : tasks.get(currentUser)) {
+            model.addRow(t);
+            if (t[3].equals("Completed")) done++;
+        }
+
+        int total = tasks.get(currentUser).size();
+
+        summary.setText("Total Tasks: " + total +
+            "     Completed: " + done +
+            "     Pending: " + (total - done));
+    }
+
+    void updateTask(String status) {
+        int row = table.getSelectedRow();
+
+        if (row == -1) {
+            message("Select a task first!");
+            return;
+        }
+
+        tasks.get(currentUser).get(row)[3] = status;
+        refresh();
+    }
+
+    void deleteTask() {
+        int row = table.getSelectedRow();
+
+        if (row == -1) {
+            message("Select a task to delete!");
+            return;
+        }
+
+        tasks.get(currentUser).remove(row);
+        refresh();
+    }
+
+    void showPerformance() {
+        int total = tasks.get(currentUser).size();
+        int done = 0;
+
+        for (String[] t : tasks.get(currentUser)) {
+            if (t[3].equals("Completed")) done++;
+        }
+
+        int percentage = total == 0 ? 0 : done * 100 / total;
+
+        message("TASK PERFORMANCE\n\nTotal Tasks: " + total +
+            "\nCompleted: " + done +
+            "\nPending: " + (total - done) +
+            "\nCompletion Rate: " + percentage + "%");
+    }
+
+    void styleButton(JButton button) {
+        button.setBackground(purple);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setFont(new Font("Arial", Font.BOLD, 12));
+    }
+
+    void message(String text) {
+        JOptionPane.showMessageDialog(this, text);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(Main::new);
+    }
+}
